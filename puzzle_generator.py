@@ -1,4 +1,4 @@
-from math import floor
+from math import factorial
 from typing import Generator, Tuple, List
 
 from itertools import permutations
@@ -9,7 +9,7 @@ A puzzle piece
 Numbers given in order of North, East, South, West orientation
 """
 
-def puzzle_generator(width: int, height: int, solutions = 2) -> Generator[List[PuzzlePiece], None, None]:
+def puzzles(width: int, height: int, solutions = 2) -> Generator[List[PuzzlePiece], None, None]:
   """Generates """
   num_connections = (width-1)*height + (height-1)*width
   num_unique_connections = num_connections//solutions
@@ -18,9 +18,14 @@ def puzzle_generator(width: int, height: int, solutions = 2) -> Generator[List[P
     puzzle = []
     for r in range(height):
       for c in range(width):
-        connection_n = 0 if r is 0 else perm[(width-1) * r + width * (r-1) + c % width]
-        connection_s = 0 if r is height - 1 else perm[(width-1) * (r+1) + width * r + c % width]
-        connection_e = 0 if c is width - 1 else perm[(width-1) * (r) + width * r + c % width]
-    yield perm
-for p in puzzle_generator(5, 5):
-  print(p)
+        n_index = (width-1) * r + width * (r-1) + (c % width)
+        w_index = (width-1) * r + width * r + (c % width) - 1
+        n = 0 if r == 0 else perm[n_index]
+        w = 0 if c == 0 else perm[w_index]
+        e = 0 if c == width - 1 else perm[w_index + 1]
+        s = 0 if r == height - 1 else perm[n_index  + (width-1) + width]
+        puzzle.append((n, e, s, w))
+    yield puzzle
+    
+def num_puzzles(width: int, height: int) -> int:
+  return factorial( (width-1)*height + (height-1)*width)
