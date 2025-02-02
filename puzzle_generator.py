@@ -3,6 +3,8 @@ from typing import Generator, Tuple, List, TypeVar
 
 from itertools import permutations
 
+from puzzle_utils import get_conn_above, get_conn_below, get_conn_left, get_conn_right
+
 PuzzlePiece = Tuple[int, int, int, int]
 """
 A puzzle piece
@@ -106,27 +108,8 @@ def pair_off(l, avail=None):
     avail.add(second_index)
   avail.add(first_index)
 
-def get_conn_above (row: int, col: int, board_dims: Tuple[int, int]):
-  w, h  = board_dims
-  if row == 0: return -1
-  return col + (2*w-1) * (row-1) + w - 1
-
-def get_conn_below (row: int, col: int, board_dims: Tuple[int, int]):
-  w, h  = board_dims
-  if row == h-1: return -1
-  return get_conn_above(row + 1, col, board_dims)
-
-def get_conn_left (row: int, col: int, board_dims: Tuple[int, int]):
-  w, h  = board_dims
-  if col == 0: return -1
-  return col + (2*w-1) * row - 1
-
-def get_conn_right (row: int, col: int, board_dims: Tuple[int, int]):
-  w, h  = board_dims
-  if col == w-1: return -1
-  return get_conn_left(row, col+ 1, board_dims) 
-
 def borders (width: int, height: int) :
+  board_dims = (width, height)
   num_connections = (width-1)*height + (height-1)*width
 
   top_row = [i for i in range(width-1)]
@@ -142,19 +125,45 @@ def borders (width: int, height: int) :
     for i, (first_conn, second_conn) in enumerate(border_pairings):
       all_edges[first_conn] = i
       all_edges[second_conn] = i
-    print_connections(all_edges, (width, height))
-    print("")
+
+    # if possible_edge_perms(all_edges, board_dims) == 1:
+    #   continue
+    # print_connections(all_edges, (width, height))
+    # print("")
+    # for inner_pairings in pair_off(inner_edges):
+    #   for j, (first_inner_conn, second_inner_conn) in enumerate(inner_pairings):
+    #     all_edges[first_inner_conn] = i + j
+    #     all_edges[second_inner_conn] = i + j
+    #   print_connections(all_edges, (width, height))
+    #   print("")
+    for i in inner_edges:
+      all_edges[i] = None
+
+def edges_to_pieces (all_edges: List[int], board_dims: Tuple[int, int], border_only=False):
+  w, h = board_dims
+
+  get_piece = lambda r, c:  (
+        None if get_conn_above(r, c, board_dims) == -1 else all_edges[get_conn_above(r, c, board_dims)], 
+        None if get_conn_right(r, c, board_dims) == -1 else all_edges[get_conn_right(r, c, board_dims)], 
+        None if get_conn_below(r, c, board_dims) == -1 else all_edges[get_conn_below(r, c, board_dims)], 
+        None if get_conn_left(r, c, board_dims) == -1 else all_edges[get_conn_left(r, c, board_dims)] ) 
+  if not border_only:
+    return [get_piece(r, c)
+        for r in range(h )for c in range(w)
+    ]
+  return [get_piece(0, c)
+        for c in range(board_dims[0])
+  ] + [get_piece(r, c)
+        for c in (0, h-1)
+        for r in range(h)
+  ] + [ get_piece(h-1, c)
+        for c in range(board_dims[0])
+    
+  ]
 
 
 
-
-def print_connections (edges: List[int], board_dims: Tuple[int, int]):
-  sq = " [ ] "
-  width, height = board_dims
-  format_edge = lambda n: "---" if n == None else f"{n:03d}"
-  print(sq + sq.join([format_edge(edges[get_conn_right(0, c, board_dims)]) for c in range (width - 1)]) + sq)
-  for r in range(1, height):
-    print("   ".join([" " + format_edge( edges[get_conn_above(r, c,board_dims)]) + " " for c in range(width)]))
-    print(sq + sq.join([format_edge(edges[get_conn_right(r, c, board_dims)]) for c in range (width - 1)]) + sq)
-
-borders(3,3)
+print(edges_to_pieces ([
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+], (3, 3))
+)
